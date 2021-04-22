@@ -1,11 +1,11 @@
-#include "fixedint.h"
-#include "fe.h"
+#include "fixedint.cuh"
+#include "fe.cuh"
 
 
 /*
     helper functions
 */
-static uint64_t load_3(const unsigned char *in) {
+__device__ uint64_t load_3(const unsigned char *in) {
     uint64_t result;
 
     result = (uint64_t) in[0];
@@ -15,7 +15,7 @@ static uint64_t load_3(const unsigned char *in) {
     return result;
 }
 
-static uint64_t load_4(const unsigned char *in) {
+__device__ uint64_t load_4(const unsigned char *in) {
     uint64_t result;
 
     result = (uint64_t) in[0];
@@ -32,7 +32,7 @@ static uint64_t load_4(const unsigned char *in) {
     h = 0
 */
 
-void fe_0(fe h) {
+__device__ void fe_0(fe h) {
     h[0] = 0;
     h[1] = 0;
     h[2] = 0;
@@ -51,7 +51,7 @@ void fe_0(fe h) {
     h = 1
 */
 
-void fe_1(fe h) {
+__device__ void fe_1(fe h) {
     h[0] = 1;
     h[1] = 0;
     h[2] = 0;
@@ -78,7 +78,7 @@ void fe_1(fe h) {
        |h| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
-void fe_add(fe h, const fe f, const fe g) {
+__device__ void fe_add(fe h, const fe f, const fe g) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -131,7 +131,7 @@ void fe_add(fe h, const fe f, const fe g) {
     Preconditions: b in {0,1}.
 */
 
-void fe_cmov(fe f, const fe g, unsigned int b) {
+__device__ void fe_cmov(fe f, const fe g, unsigned int b) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -194,7 +194,7 @@ void fe_cmov(fe f, const fe g, unsigned int b) {
     Preconditions: b in {0,1}.
 */
 
-void fe_cswap(fe f,fe g,unsigned int b) {
+__device__ void fe_cswap(fe f,fe g,unsigned int b) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -264,7 +264,7 @@ void fe_cswap(fe f,fe g,unsigned int b) {
     h = f
 */
 
-void fe_copy(fe h, const fe f) {
+__device__ void fe_copy(fe h, const fe f) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -294,7 +294,7 @@ void fe_copy(fe h, const fe f) {
     Ignores top bit of h.
 */
 
-void fe_frombytes(fe h, const unsigned char *s) {
+__device__ void fe_frombytes(fe h, const unsigned char *s) {
     int64_t h0 = load_4(s);
     int64_t h1 = load_3(s + 4) << 6;
     int64_t h2 = load_3(s + 7) << 5;
@@ -361,7 +361,7 @@ void fe_frombytes(fe h, const unsigned char *s) {
 
 
 
-void fe_invert(fe out, const fe z) {
+__device__ void fe_invert(fe out, const fe z) {
     fe t0;
     fe t1;
     fe t2;
@@ -457,7 +457,7 @@ void fe_invert(fe out, const fe z) {
        |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
-int fe_isnegative(const fe f) {
+__device__ int fe_isnegative(const fe f) {
     unsigned char s[32];
 
     fe_tobytes(s, f);
@@ -475,7 +475,7 @@ int fe_isnegative(const fe f) {
        |f| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
-int fe_isnonzero(const fe f) {
+__device__ int fe_isnonzero(const fe f) {
     unsigned char s[32];
     unsigned char r;
 
@@ -553,7 +553,7 @@ int fe_isnonzero(const fe f) {
     With tighter constraints on inputs can squeeze carries into int32.
 */
 
-void fe_mul(fe h, const fe f, const fe g) {
+__device__ void fe_mul(fe h, const fe f, const fe g) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -776,7 +776,7 @@ Postconditions:
    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
 */
 
-void fe_mul121666(fe h, fe f) {
+__device__ void fe_mul121666(fe h, fe f) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -843,7 +843,7 @@ Postconditions:
    |h| bounded by 1.1*2^25,1.1*2^24,1.1*2^25,1.1*2^24,etc.
 */
 
-void fe_neg(fe h, const fe f) {
+__device__ void fe_neg(fe h, const fe f) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -878,7 +878,7 @@ void fe_neg(fe h, const fe f) {
 }
 
 
-void fe_pow22523(fe out, const fe z) {
+__device__ void fe_pow22523(fe out, const fe z) {
     fe t0;
     fe t1;
     fe t2;
@@ -979,7 +979,7 @@ Postconditions:
 See fe_mul.c for discussion of implementation strategy.
 */
 
-void fe_sq(fe h, const fe f) {
+__device__ void fe_sq(fe h, const fe f) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -1142,7 +1142,7 @@ Postconditions:
 See fe_mul.c for discussion of implementation strategy.
 */
 
-void fe_sq2(fe h, const fe f) {
+__device__ void fe_sq2(fe h, const fe f) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -1312,7 +1312,7 @@ Postconditions:
    |h| bounded by 1.1*2^26,1.1*2^25,1.1*2^26,1.1*2^25,etc.
 */
 
-void fe_sub(fe h, const fe f, const fe g) {
+__device__ void fe_sub(fe h, const fe f, const fe g) {
     int32_t f0 = f[0];
     int32_t f1 = f[1];
     int32_t f2 = f[2];
@@ -1383,7 +1383,7 @@ Proof:
   so floor(2^(-255)(h + 19 2^(-25) h9 + 2^(-1))) = q.
 */
 
-void fe_tobytes(unsigned char *s, const fe h) {
+__device__ void fe_tobytes(unsigned char *s, const fe h) {
     int32_t h0 = h[0];
     int32_t h1 = h[1];
     int32_t h2 = h[2];

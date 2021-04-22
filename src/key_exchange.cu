@@ -1,7 +1,7 @@
-#include "ed25519.h"
-#include "fe.h"
+#include "ed25519.cuh"
+#include "fe.cuh"
 
-void ed25519_key_exchange(unsigned char *shared_secret, const unsigned char *public_key, const unsigned char *private_key) {
+__device__ void ed25519_kernel_key_exchange(unsigned char *shared_secret, const unsigned char *public_key, const unsigned char *private_key) {
     unsigned char e[32];
     unsigned int i;
     
@@ -76,4 +76,13 @@ void ed25519_key_exchange(unsigned char *shared_secret, const unsigned char *pub
     fe_invert(z2, z2);
     fe_mul(x2, x2, z2);
     fe_tobytes(shared_secret, x2);
+}
+
+__global__ void ed25519_kernel_key_exchange_batch(unsigned char *shared_secret, const unsigned char *public_key, const unsigned char *private_key, int limit) {
+    int compute_index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (compute_index >= limit) {
+        return;
+    }
+
+    ed25519_kernel_key_exchange(&shared_secret[compute_index * 32], &public_key[compute_index * 32], &private_key[compute_index * 64]);
 }

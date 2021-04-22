@@ -1,11 +1,11 @@
-#include "ed25519.h"
-#include "ge.h"
-#include "sc.h"
-#include "sha512.h"
+#include "ed25519.cuh"
+#include "ge.cuh"
+#include "sc.cuh"
+#include "sha512.cuh"
 
 
 /* see http://crypto.stackexchange.com/a/6215/4697 */
-void ed25519_add_scalar(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar) {
+__device__ void ed25519_kernel_add_scalar(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar) {
     const unsigned char SC_1[32] = {1}; /* scalar with value 1 */
     
     unsigned char n[32]; 
@@ -66,4 +66,23 @@ void ed25519_add_scalar(unsigned char *public_key, unsigned char *private_key, c
         /* pack public key */
         ge_p3_tobytes(public_key, &A);
     }
+}
+
+__global__ void ed25519_kernel_add_scalar_batch(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar, int limit) {
+    int compute_index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (compute_index >= limit) {
+        return;
+    }
+
+    ed25519_kernel_add_scalar(&public_key[compute_index * 32], &private_key[compute_index * 64], scalar);
+}
+
+__global__ void ed25519_kernel_add_multi_scalar_batch(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar, int *scalar_mapping, int limit) {
+    int compute_index = blockIdx.x * blockDim.x + threadIdx.x;
+    if (compute_index >= limit) {
+        return;
+    }
+
+    int scalar_index = ((scalar_mapping == NULL)? compute_index: scalar_mapping[compute_index]);
+    ed25519_kernel_add_scalar(&public_key[compute_index * 32], &private_key[compute_index * 64], &scalar[scalar_index * 32]);
 }
