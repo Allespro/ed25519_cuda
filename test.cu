@@ -5,7 +5,7 @@
 #include <memory.h>
 #include <assert.h>
 
-#define PERF_BLOCKS 32768
+#define PERF_BLOCKS 64
 #define PERF_THREADS 256
 
 /* #define ED25519_DLL */
