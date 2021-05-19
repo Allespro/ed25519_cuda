@@ -5,7 +5,7 @@
 #include <memory.h>
 #include <assert.h>
 
-#define PERF_BLOCKS 64
+#define PERF_BLOCKS 1024
 #define PERF_THREADS 256
 
 /* #define ED25519_DLL */
@@ -91,7 +91,7 @@ int test_batch_single_keypair(int enable_logging) {
     cudaMallocHost(&seed_hf, 32 * sizeof(unsigned char));
 
     // Test whether create seed __host__ function works
-    ed25519_kernel_create_seed(seed_hf);
+    ed25519_kernel_create_seed(seed_hf,1);
     cudaMemcpy(seed, seed_hf, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
     // Use a predefined seed to enbale reproducibility
@@ -188,9 +188,11 @@ int test_batch_multi_keypair_no_mapping(int enable_logging) {
     cudaMalloc(&seed, 1024 * 32 * sizeof(unsigned char));
     cudaMallocHost(&seed_h, 1024 * 32 * sizeof(unsigned char));
 
-    for (int i = 0; i < 1024; ++i) {
-        ed25519_kernel_create_seed(&seed_h[i * 32]);
-    }
+    // for (int i = 0; i < 1024; ++i) {
+    //     ed25519_kernel_create_seed(&seed_h[i * 32]);
+    // }
+    ed25519_kernel_create_seed(seed_h, 1024);
+
     cudaMemcpy(seed, seed_h, 1024 * 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
     ed25519_kernel_create_keypair_batch<<<8,128>>>(public_key, private_key, (const unsigned char*) seed, 1024);
@@ -396,8 +398,9 @@ int test_batch_add_scalar(int enable_logging) {
 
     for (int i = 0; i < 1024; ++i) {
         strcpy((char*) &scalar_h[i * 32], "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-        ed25519_kernel_create_seed(&seed_h[i * 32]);
+        // ed25519_kernel_create_seed(&seed_h[i * 32]);
     }
+    ed25519_kernel_create_seed(seed_h, 1024);
 
     memset(scalar_mapping_h, 0, 1024 * sizeof(int));
 
@@ -471,9 +474,10 @@ int test_key_exchange(int enable_logging) {
     cudaMalloc(&shared_secret_2, 32 * sizeof(unsigned char));
     cudaMallocHost(&seed_h, 2 * 32 * sizeof(unsigned char));
 
-    for (int i = 0; i < 2; ++i) {
-        ed25519_kernel_create_seed(&seed_h[i * 32]);
-    }
+    // for (int i = 0; i < 2; ++i) {
+    //     ed25519_kernel_create_seed(&seed_h[i * 32]);
+    // }
+    ed25519_kernel_create_seed(seed_h, 2);
 
     cudaMemcpy(seed, seed_h, 2 * 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
@@ -552,14 +556,14 @@ void test_performance(int enable_logging) {
 
     message_len_h[0] = 0;
     for (int i = 0; i < PERF_BLOCKS * PERF_THREADS; ++i) {
-        message_len_h[i + 1] = message_len_h[i] + 32;
-        ed25519_kernel_create_seed(&seed_h[i * 32]);
+        message_len_h[i + 1] = message_len_h[i] + 128;
+        // ed25519_kernel_create_seed(&seed_h[i * 32]);
         strcpy((char *)&messages_h[i * 128],
             "9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60d75"
             "a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a");
         strcpy((char*) &scalar_h[i * 32], "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     }
-    ed25519_kernel_create_seed(&seed_h[PERF_BLOCKS * PERF_THREADS * 32]);
+    ed25519_kernel_create_seed(seed_h, PERF_BLOCKS * PERF_THREADS + 1);
 
     cudaMemcpy(seed, seed_h, (PERF_BLOCKS * PERF_THREADS + 1) * 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
     cudaMemcpy(messages, messages_h, PERF_BLOCKS * PERF_THREADS * 128 * sizeof(unsigned char), cudaMemcpyHostToDevice);
