@@ -12,7 +12,7 @@
 #define COLAB_ENVIRONMENT
 
 #ifdef COLAB_ENVIRONMENT
-/* 
+/*
  * In Google Colab we keep all files
  * under same directory for simplicity
  */
@@ -27,7 +27,7 @@
 
 void display_details(unsigned char *signature_h, unsigned char *public_key_h, unsigned char *private_key_h) {
     printf("Logging the first public key and private key of the batch along with the signature for the input:\n\"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a\" :\n\n");
-    
+
     printf("Signature\n");
     for (int i = 0; i < 64; ++i) {
         printf("%d  ", signature_h[i]);
@@ -67,7 +67,7 @@ void display_key_pair(unsigned char public_keys[][33], unsigned char private_key
 
 void display_secret(unsigned char secret[2][33]) {
     printf("Following are the secrets for the key exchange (both secret should be same):\n\n");
-    
+
     for(int j = 0; j < 2; ++j) {
         printf("Secret %d:\n", j + 1);
         for (int i = 0; i < 32; ++i) {
@@ -171,7 +171,7 @@ int test_batch_single_keypair(int enable_logging) {
     for (int i = 0; i < 1024; ++i) {
         flag = flag & verified_h[i];
     }
-    
+
     assert(flag);
 
     return 1;
@@ -267,7 +267,7 @@ int test_batch_multi_keypair_no_mapping(int enable_logging) {
     for (int i = 0; i < 1024; ++i) {
         flag = flag & verified_h[i];
     }
-    
+
     assert(flag);
 
     return 1;
@@ -366,7 +366,7 @@ int test_batch_multi_keypair_with_mapping(int enable_logging) {
     for (int i = 0; i < 1024; ++i) {
         flag = flag & verified_h[i];
     }
-    
+
     assert(flag);
 
     return 1;
@@ -510,9 +510,8 @@ int test_key_exchange(int enable_logging) {
 }
 
 void test_performance(int enable_logging) {
-    clock_t start;
-    clock_t end;
-
+    cudaEvent_t start,stop;
+    float time;
     unsigned char *public_key;
     unsigned char *private_key;
     unsigned char *seed_h;
@@ -531,6 +530,9 @@ void test_performance(int enable_logging) {
 
     unsigned char *shared;
 
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+
     cudaMalloc(&public_key, (PERF_BLOCKS * PERF_THREADS + 1) * 32 * sizeof(unsigned char));
     cudaMalloc(&private_key, (PERF_BLOCKS * PERF_THREADS + 1) * 64 * sizeof(unsigned char));
     cudaMalloc(&seed, (PERF_BLOCKS * PERF_THREADS + 1) * 32 * sizeof(unsigned char));
@@ -541,7 +543,7 @@ void test_performance(int enable_logging) {
     cudaMalloc(&shared, PERF_BLOCKS * PERF_THREADS * 32 * sizeof(unsigned char));
     cudaMalloc(&verified, PERF_BLOCKS * PERF_THREADS * sizeof(int));
     cudaMallocHost(&seed_h, (PERF_BLOCKS * PERF_THREADS + 1) * 32 * sizeof(unsigned char));
-    
+
     cudaDeviceSynchronize();
     cudaError_t error = cudaGetLastError();
 	if (error != cudaSuccess) {
@@ -565,128 +567,162 @@ void test_performance(int enable_logging) {
     cudaMemcpy(scalar, scalar_h, PERF_BLOCKS * PERF_THREADS * 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_create_keypair_batch<<<PERF_BLOCKS + 1,PERF_THREADS>>>(public_key, private_key, (const unsigned char*) seed, PERF_BLOCKS * PERF_THREADS + 1);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - keypair generation: %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Key pair generation performance: %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS + 1) * 1000);
+    printf("Key pair generation performance: %fus per key pair\n", (time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_sign_batch_single_keypair<<<PERF_BLOCKS,PERF_THREADS>>>(signature, messages, message_len, public_key, private_key, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - sign (single key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Sign performance (single key pair): %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Sign performance (single key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_verify_batch_single_keypair<<<PERF_BLOCKS,PERF_THREADS>>>(signature, messages, message_len, public_key, verified, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - verify (single key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Verify performance (single key pair): %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Verify performance (single key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_sign_batch_multi_keypair<<<PERF_BLOCKS,PERF_THREADS>>>(signature, messages, message_len, public_key, private_key, NULL, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - sign (multiple key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Sign performance (multiple key pair): %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Sign performance (multiple key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_verify_batch_multi_keypair<<<PERF_BLOCKS,PERF_THREADS>>>(signature, messages, message_len, public_key, verified, NULL, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - verify (multiple key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Verify performance (multiple key pair): %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Verify performance (multiple key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_add_scalar_batch<<<PERF_BLOCKS,PERF_THREADS>>>(public_key, private_key, scalar, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - add scalar (same): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Add scalar performance (same scalar): %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Add scalar performance (same scalar): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_add_multi_scalar_batch<<<PERF_BLOCKS,PERF_THREADS>>>(public_key, private_key, scalar, NULL, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - add scalar (multiple): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Add scalar performance (multiple scalar): %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Add scalar performance (multiple scalar): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
-    start = clock();
+    // start = clock();
+    cudaEventRecord(start,0);
 
     ed25519_kernel_key_exchange_batch<<<PERF_BLOCKS,PERF_THREADS>>>(shared, &public_key[32], private_key, PERF_BLOCKS * PERF_THREADS);
 
     cudaDeviceSynchronize();
-    end = clock();
+    // end = clock();
+    cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - key exchange: %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Key Exchange performance: %fus per key pair\n", ((double) ((end - start) * 1000)) / CLOCKS_PER_SEC / (PERF_BLOCKS * PERF_THREADS) * 1000);
+    printf("Key Exchange performance: %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
 
     free(messages_h);
     free(message_len_h);
     free(scalar_h);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
 
     cudaFree(public_key);
     cudaFree(private_key);
