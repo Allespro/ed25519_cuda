@@ -5,8 +5,8 @@
 #include <memory.h>
 #include <assert.h>
 
-#define PERF_BLOCKS 1024
-#define PERF_THREADS 256
+unsigned int PERF_BLOCKS = 1024;
+unsigned int PERF_THREADS = 256;
 
 /* #define ED25519_DLL */
 #define COLAB_ENVIRONMENT
@@ -588,7 +588,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - keypair generation: %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Key pair generation performance: %fus per key pair\n", (time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Key pair generation performance: %fus per key pair\n", ((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -599,13 +599,15 @@ void test_performance(int enable_logging) {
     cudaDeviceSynchronize();
     // end = clock();
     cudaEventRecord(stop,0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&time,start,stop);//gives time in milliseconds
 
     error = cudaGetLastError();
 	if (error != cudaSuccess) {
 		printf("Error cuda ed25519 performance test - sign (single key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Sign performance (single key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Sign performance (single key pair): %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -624,7 +626,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - verify (single key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Verify performance (single key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Verify performance (single key pair): %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -643,7 +645,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - sign (multiple key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Sign performance (multiple key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Sign performance (multiple key pair): %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -662,7 +664,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - verify (multiple key pair): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Verify performance (multiple key pair): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Verify performance (multiple key pair): %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -681,7 +683,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - add scalar (same): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Add scalar performance (same scalar): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Add scalar performance (same scalar): %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -700,7 +702,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - add scalar (multiple): %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Add scalar performance (multiple scalar): %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Add scalar performance (multiple scalar): %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     cudaDeviceSynchronize();
     // start = clock();
@@ -719,7 +721,7 @@ void test_performance(int enable_logging) {
 		printf("Error cuda ed25519 performance test - key exchange: %s \n", cudaGetErrorString(error));
 	}
 
-    printf("Key Exchange performance: %fus per key pair\n",(time) / (PERF_BLOCKS * PERF_THREADS));
+    printf("Key Exchange performance: %fus per key pair\n",((time) * 1000) / (PERF_BLOCKS * PERF_THREADS));
 
     free(messages_h);
     free(message_len_h);
@@ -768,7 +770,16 @@ int main(int argc, char **argv) {
 
     if (enable_perf_logging) {
         printf(((enable_logging)? "\n\n---------- Performance ----------\n\n": ""));
-        test_performance(enable_logging);
+        while (PERF_BLOCKS >= 1 && PERF_THREADS >= 32) {
+            printf("Blocks: %u\tThreads: %u\n", PERF_BLOCKS, PERF_THREADS);
+            test_performance(enable_logging);
+            cudaDeviceSynchronize();
+            if (PERF_BLOCKS > 1) {
+                PERF_BLOCKS = PERF_BLOCKS / 2;
+            } else {
+                PERF_THREADS = PERF_THREADS / 2;
+            }
+        }
     }
 
     return 0;
