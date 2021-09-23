@@ -1,3 +1,15 @@
+# CUDA port of ED25519 Library
+
+This group project was done as a part of course Heterogenous Parallelism (UE18CS342).
+
+The team members include [Arjum M.](https://github.com/arjun120), [Ruthwik H. M.](https://github.com/RuthwikHM) and I.
+
+Performance testing for the project was done on Google Colab.
+
+The original implmentation in C comes from [Orson Peters](https://github.com/orlp), specifically his [ed25519 library](https://github.com/orlp/ed25519)
+
+
+
 Ed25519
 =======
 
