@@ -2,7 +2,7 @@
 
 This group project was done as a part of course Heterogenous Parallelism (UE18CS342).
 
-The team members include [Arjum M.](https://github.com/arjun120), [Ruthwik H. M.](https://github.com/RuthwikHM) and I.
+The team members include [Arjun M.](https://github.com/arjun120), [Ruthwik H. M.](https://github.com/RuthwikHM) and I.
 
 Performance testing for the project was done on Google Colab.
 
