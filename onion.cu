@@ -1,3 +1,5 @@
+#include "keccakf.cuh"
+
 __device__ void hash(unsigned char *checksum) {
   // pad checksum up r bits
   checksum[48] = 0x01; // pad10*1 start
