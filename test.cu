@@ -30,7 +30,7 @@ void display_details(unsigned char *public_key_h, unsigned char *private_key_h, 
     
     printf("Checksum\n");
     for (int i = 0; i < 64; ++i) {
-        printf("%d  ", checksum[i]);
+        printf("%d  ", checksum_h[i]);
     }
     printf("\n");
 }
