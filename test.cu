@@ -88,10 +88,10 @@ int create_keypair(int enable_logging) {
         cudaMemcpy(public_key_h, public_key, 32 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
         cudaMemcpy(private_key_h, private_key, 64 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
 
-        error = cudaGetLastError();
-        if (error != cudaSuccess) {
-            printf("Error cuda ed25519 logging: %s \n", cudaGetErrorString(error));
-        }
+        //error = cudaGetLastError();
+        //if (error != cudaSuccess) {
+        //    printf("Error cuda ed25519 logging: %s \n", cudaGetErrorString(error));
+        //}
 
         display_details(public_key_h, private_key_h);
     }
@@ -105,7 +105,7 @@ int create_keypair(int enable_logging) {
 
 int main(int argc, char **argv) {
     int enable_logging = 0;
-    int enable_perf_logging = 0;
+    //int enable_perf_logging = 0;
     for (int i = 0 ; i < argc; ++i) {
         if (strcmp(argv[i], "--perf") == 0 || strcmp(argv[i], "-p") == 0) {
             enable_perf_logging = 1;
@@ -115,6 +115,6 @@ int main(int argc, char **argv) {
     }
 
     printf(((enable_logging)? "\n\n---------- Test batch with single key pair ----------\n\n": ""));
-    assert(test_batch_single_keypair(enable_logging));
+    assert(create_keypair(enable_logging));
     return 0;
 }
