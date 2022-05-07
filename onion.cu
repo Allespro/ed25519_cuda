@@ -3,7 +3,7 @@
 
 
 __global__ void onion_address(unsigned char *public_key) {
-    uint8_t checksum_h[200] = ".onion checksum";
+    uint8_t checksum[200] = ".onion checksum";
     for (int i = 0; i < 32; ++i) checksum[15 + i] = public_key[i];
     checksum[47] = 0x03;
     // pad checksum up r bits
