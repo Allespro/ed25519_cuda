@@ -3,6 +3,6 @@
 
 #include <stdint.h>
 
-__global__ void keccakf(uint64_t s[25]);
+__device__ void keccakf(uint64_t s[25]);
 
 #endif
