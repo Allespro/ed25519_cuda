@@ -29,7 +29,7 @@ __constant__ unsigned keccakf_piln[24] = {
     14, 22, 9, 6, 1
 };
 
-__global__ void keccakf(uint64_t s[25])
+__device__ int keccakf(uint64_t s[25])
 {
     int i, j, round;
     uint64_t t, bc[5];
@@ -66,4 +66,5 @@ __global__ void keccakf(uint64_t s[25])
         /* Iota */
         s[0] ^= keccakf_rndc[round];
     }
+    return 0;
 }

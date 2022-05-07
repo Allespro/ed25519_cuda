@@ -12,7 +12,7 @@ __global__ void hash(uint8_t *checksum) {
   }
 
   // run the keccakf transformation
-  keccakf(*S);
+  keccakf<<<1,1>>>(*S); 
 
 }
 
