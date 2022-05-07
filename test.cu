@@ -57,12 +57,12 @@ void display_secret(unsigned char secret[2][33]) {
 
 }
 
-int create_keypair(int enable_logging) {
+int create_keypair(bool enable_logging, bool test_seed) {
     unsigned char *public_key;
     unsigned char *private_key;
     unsigned char *seed_hf;
     unsigned char *seed;
-    //unsigned char seed_h[33] = "01234567890123456789012345678901";
+    unsigned char seed_h[33] = "01234567890123456789012345678901";
 
     cudaMalloc(&public_key, 32 * sizeof(unsigned char));
     cudaMalloc(&private_key, 64 * sizeof(unsigned char));
@@ -72,6 +72,9 @@ int create_keypair(int enable_logging) {
     // Test whether create seed __host__ function works
     ed25519_kernel_create_seed(seed_hf,1);
     cudaMemcpy(seed, seed_hf, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    if (test_seed) {
+        cudaMemcpy(seed, seed_h, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    }
 
     ed25519_kernel_create_keypair_batch<<<1,1>>>(public_key, private_key, (const unsigned char*) seed, 1);
 
@@ -91,14 +94,17 @@ int create_keypair(int enable_logging) {
 }
 
 int main(int argc, char **argv) {
-    int enable_logging = 0;
+    bool enable_logging = false;
+    bool test_seed = false;
     for (int i = 0 ; i < argc; ++i) {
         if (strcmp(argv[i], "--logging") == 0 || strcmp(argv[i], "-l") == 0) {
-            enable_logging = 1;
+            enable_logging = true;
+        } else if (strcmp(argv[i], "--testseed") == 0 || strcmp(argv[i], "-t") == 0) {
+            test_seed = true;
         }
     }
 
     printf(((enable_logging)? "\n\n---------- Test batch with single key pair ----------\n\n": ""));
-    assert(create_keypair(enable_logging));
+    assert(create_keypair(enable_logging, test_seed));
     return 0;
 }
