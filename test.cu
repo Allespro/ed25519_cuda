@@ -11,6 +11,7 @@ unsigned int PERF_THREADS = 256;
 #include "ed25519.cuh"
 #include "ge.cuh"
 #include "sc.cuh"
+#include "onion.cuh"
 
 void display_details(unsigned char *public_key_h, unsigned char *private_key_h) {
     uint8_t checksum[200] = ".onion checksum";

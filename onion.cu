@@ -1,6 +1,5 @@
 #include "keccakf.cuh"
 
-
 __device__ void onion_address(unsigned char *public_key, uint8_t *checksum) {
     for (int i = 0; i < 32; ++i) checksum[15 + i] = public_key[i];
     checksum[47] = 0x03;
