@@ -19,17 +19,17 @@ __constant__ uint64_t keccakf_rndc[24] = {
     SHA3_CONST(0x0000000080000001UL), SHA3_CONST(0x8000000080008008UL)
 };
 
-__constant__ fe keccakf_rotc[24] = {
+__constant__ unsigned keccakf_rotc[24] = {
     1, 3, 6, 10, 15, 21, 28, 36, 45, 55, 2, 14, 27, 41, 56, 8, 25, 43, 62,
     18, 39, 61, 20, 44
 };
 
-__constant__ fe keccakf_piln[24] = {
+__constant__ unsigned keccakf_piln[24] = {
     10, 7, 11, 17, 18, 3, 5, 16, 8, 21, 24, 4, 15, 23, 19, 13, 12, 2, 20,
     14, 22, 9, 6, 1
 };
 
-__device__ void keccakf(uint64_t s[25])
+__global__ void keccakf(uint64_t s[25])
 {
     int i, j, round;
     uint64_t t, bc[5];
