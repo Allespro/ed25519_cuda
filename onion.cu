@@ -16,14 +16,8 @@ __device__ void hash(uint8_t *checksum) {
 
 }
 
-__global__ void onion_address(unsigned char *public_key) {
-    uint8_t checksum[200] = ".onion checksum";
+__global__ void onion_address(unsigned char *public_key, uint8_t *checksum) {
     for (int i = 0; i < 32; ++i) checksum[15 + i] = public_key[i];
     checksum[47] = 0x03;
     hash(checksum);
-    printf("checksum\n");
-    for (int i = 0; i < 64; ++i) {
-        printf("%d  ", checksum[i]);
-    }
-    printf("\n");
 }

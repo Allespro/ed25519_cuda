@@ -26,6 +26,7 @@ void pubkey(unsigned char *seed, unsigned char *pk)
 }
 
 void display_details(unsigned char *public_key_h, unsigned char *private_key_h) {
+    uint8_t checksum[200] = ".onion checksum";
     printf("Public Key\n");
     for (int i = 0; i < 32; ++i) {
         printf("%d  ", public_key_h[i]);
@@ -37,7 +38,13 @@ void display_details(unsigned char *public_key_h, unsigned char *private_key_h) 
         printf("%d  ", private_key_h[i]);
     }
     printf("\n");
-    onion_address(public_key_h);
+
+    onion_address(public_key_h, checksum);
+    printf("Checksum\n");
+    for (int i = 0; i < 64; ++i) {
+        printf("%d  ", checksum[i]);
+    }
+    printf("\n");
 }
 
 void display_key_pair(unsigned char public_keys[][33], unsigned char private_keys[][65], int n) {
