@@ -72,8 +72,9 @@ int create_keypair(bool enable_logging, bool test_seed) {
     unsigned char *seed_hf;
     unsigned char *seed;
     uint8_t *checksum;
+    uint8_t checksum_h[200];
     unsigned char seed_h[33] = "01234567890123456789012345678901";
-    uint8_t checksum_h[200] = ".onion checksum";
+    
 
     cudaMalloc(&public_key, 32 * sizeof(unsigned char));
     cudaMalloc(&private_key, 64 * sizeof(unsigned char));
@@ -88,7 +89,6 @@ int create_keypair(bool enable_logging, bool test_seed) {
     }
     ed25519_kernel_create_keypair_batch<<<1,1>>>(public_key, private_key, (const unsigned char*) seed, 1);
 
-    cudaMemcpy(checksum, checksum_h, 200 * sizeof(uint8_t), cudaMemcpyHostToDevice);
     onion_address<<<1,1>>>(public_key, (uint8_t*) checksum);
 
     if (enable_logging) {
