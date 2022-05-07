@@ -105,11 +105,8 @@ int create_keypair(int enable_logging) {
 
 int main(int argc, char **argv) {
     int enable_logging = 0;
-    //int enable_perf_logging = 0;
     for (int i = 0 ; i < argc; ++i) {
-        if (strcmp(argv[i], "--perf") == 0 || strcmp(argv[i], "-p") == 0) {
-            enable_perf_logging = 1;
-        } else if (strcmp(argv[i], "--logging") == 0 || strcmp(argv[i], "-l") == 0) {
+        if (strcmp(argv[i], "--logging") == 0 || strcmp(argv[i], "-l") == 0) {
             enable_logging = 1;
         }
     }
