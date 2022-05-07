@@ -1,7 +1,7 @@
 #include "keccakf.cuh"
 
 
-__host__ void onion_address(unsigned char *public_key, uint8_t *checksum) {
+__device__ void onion_address(unsigned char *public_key, uint8_t *checksum) {
     for (int i = 0; i < 32; ++i) checksum[15 + i] = public_key[i];
     checksum[47] = 0x03;
     // pad checksum up r bits
@@ -15,5 +15,5 @@ __host__ void onion_address(unsigned char *public_key, uint8_t *checksum) {
     }
 
     // run the keccakf transformation
-    keccakf<<<1,1>>>(*S); 
+    keccakf(*S); 
 }
