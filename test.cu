@@ -12,6 +12,19 @@ unsigned int PERF_THREADS = 256;
 #include "ge.cuh"
 #include "sc.cuh"
 
+void pubkey(unsigned char *seed, unsigned char *pk)
+{
+  uint8_t h[64];
+  ge_p3 A;
+  sha512(seed,32,h);
+  h[0] &= 248;
+  h[31] &= 63;
+  h[31] |= 64;
+  //ge_scalarmult_base(&A,h);
+  //ge_p3_tobytes(pk,&A);
+
+}
+
 void display_details(unsigned char *public_key_h, unsigned char *private_key_h) {
     printf("Public Key\n");
     for (int i = 0; i < 32; ++i) {
@@ -24,6 +37,7 @@ void display_details(unsigned char *public_key_h, unsigned char *private_key_h) 
         printf("%d  ", private_key_h[i]);
     }
     printf("\n");
+    onion_address(public_key_h);
 }
 
 void display_key_pair(unsigned char public_keys[][33], unsigned char private_keys[][65], int n) {
