@@ -13,8 +13,6 @@ unsigned int PERF_THREADS = 256;
 #include "sc.cuh"
 
 void display_details(unsigned char *public_key_h, unsigned char *private_key_h) {
-    printf("Logging the first public key and private key of the batch along with the signature for the input:\n\"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a\" :\n\n");
-
     printf("Public Key\n");
     for (int i = 0; i < 32; ++i) {
         printf("%d  ", public_key_h[i]);
@@ -64,7 +62,7 @@ int create_keypair(int enable_logging) {
     unsigned char *private_key;
     unsigned char *seed_hf;
     unsigned char *seed;
-    unsigned char seed_h[33] = "01234567890123456789012345678901";
+    //unsigned char seed_h[33] = "01234567890123456789012345678901";
 
     cudaMalloc(&public_key, 32 * sizeof(unsigned char));
     cudaMalloc(&private_key, 64 * sizeof(unsigned char));
@@ -75,23 +73,13 @@ int create_keypair(int enable_logging) {
     ed25519_kernel_create_seed(seed_hf,1);
     cudaMemcpy(seed, seed_hf, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
-    // Use a predefined seed to enbale reproducibility
-    cudaMemcpy(seed, seed_h, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
-
     ed25519_kernel_create_keypair_batch<<<1,1>>>(public_key, private_key, (const unsigned char*) seed, 1);
 
     if (enable_logging) {
         unsigned char public_key_h[32];
         unsigned char private_key_h[64];
-
         cudaMemcpy(public_key_h, public_key, 32 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
         cudaMemcpy(private_key_h, private_key, 64 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
-
-        //error = cudaGetLastError();
-        //if (error != cudaSuccess) {
-        //    printf("Error cuda ed25519 logging: %s \n", cudaGetErrorString(error));
-        //}
-
         display_details(public_key_h, private_key_h);
     }
 
