@@ -13,8 +13,8 @@ unsigned int PERF_THREADS = 256;
 #include "sc.cuh"
 #include "onion.cuh"
 
-void display_details(unsigned char *public_key_h, unsigned char *private_key_h) {
-    uint8_t checksum[200] = ".onion checksum";
+void display_details(unsigned char *public_key_h, unsigned char *private_key_h, uint8_t *checksum_h) {
+    
     printf("Public Key\n");
     for (int i = 0; i < 32; ++i) {
         printf("%d  ", public_key_h[i]);
@@ -27,7 +27,7 @@ void display_details(unsigned char *public_key_h, unsigned char *private_key_h) 
     }
     printf("\n");
 
-    onion_address(public_key_h, checksum);
+    
     printf("Checksum\n");
     for (int i = 0; i < 64; ++i) {
         printf("%d  ", checksum[i]);
@@ -71,7 +71,9 @@ int create_keypair(bool enable_logging, bool test_seed) {
     unsigned char *private_key;
     unsigned char *seed_hf;
     unsigned char *seed;
+    uint8_t *checksum;
     unsigned char seed_h[33] = "01234567890123456789012345678901";
+    uint8_t checksum_h[200] = ".onion checksum";
 
     cudaMalloc(&public_key, 32 * sizeof(unsigned char));
     cudaMalloc(&private_key, 64 * sizeof(unsigned char));
@@ -84,15 +86,18 @@ int create_keypair(bool enable_logging, bool test_seed) {
     if (test_seed) {
         cudaMemcpy(seed, seed_h, 32 * sizeof(unsigned char), cudaMemcpyHostToDevice);
     }
-
     ed25519_kernel_create_keypair_batch<<<1,1>>>(public_key, private_key, (const unsigned char*) seed, 1);
+
+    cudaMemcpy(checksum, checksum_h, 200 * sizeof(uint8_t), cudaMemcpyHostToDevice);
+    onion_address<<<1,1>>>(public_key, (uint8_t*) checksum);
 
     if (enable_logging) {
         unsigned char public_key_h[32];
         unsigned char private_key_h[64];
         cudaMemcpy(public_key_h, public_key, 32 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
         cudaMemcpy(private_key_h, private_key, 64 * sizeof(unsigned char), cudaMemcpyDeviceToHost);
-        display_details(public_key_h, private_key_h);
+        cudaMemcpy(checksum_h, checksum, 200 * sizeof(uint8_t), cudaMemcpyDeviceToHost);
+        display_details(public_key_h, private_key_h, checksum_h);
     }
 
     cudaFree(public_key);
