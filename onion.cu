@@ -1,6 +1,6 @@
 #include "keccakf.cuh"
 
-__device__ void hash(uint8_t *checksum) {
+__global__ void hash(uint8_t *checksum) {
   // pad checksum up r bits
   checksum[48] = 0x01; // pad10*1 start
   checksum[135] = 0x80; // pad10*1 end
