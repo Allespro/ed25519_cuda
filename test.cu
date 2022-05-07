@@ -8,10 +8,9 @@
 unsigned int PERF_BLOCKS = 1024;
 unsigned int PERF_THREADS = 256;
 
-#include "src/ed25519.cuh"
-#include "src/ge.cuh"
-#include "src/sc.cuh"
-
+#include "ed25519.cuh"
+#include "ge.cuh"
+#include "sc.cuh"
 
 void display_details(unsigned char *public_key_h, unsigned char *private_key_h) {
     printf("Logging the first public key and private key of the batch along with the signature for the input:\n\"9d61b19deffd5a60ba844af492ec2cc44449c5697b326919703bac031cae7f60d75a980182b10ab7d54bfed3c964073a0ee172f3daa62325af021a68f707511a\" :\n\n");
