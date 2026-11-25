@@ -2,14 +2,13 @@
 #include "ge.cuh"
 #include "sc.cuh"
 #include "sha512.cuh"
-#include "util.cuh"
 
 
 /* see http://crypto.stackexchange.com/a/6215/4697 */
 __device__ void ed25519_kernel_add_scalar(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar) {
     const unsigned char SC_1[32] = {1}; /* scalar with value 1 */
     
-    unsigned char *n; 
+    unsigned char n[32]; 
     ge_p3 nB;
     ge_p1p1 A_p1p1;
     ge_p3 A;
@@ -17,13 +16,11 @@ __device__ void ed25519_kernel_add_scalar(unsigned char *public_key, unsigned ch
     ge_cached T;
 
     sha512_context hash;
-    unsigned char *hashbuf;
+    unsigned char hashbuf[64];
 
-    cudaMalloc(&n, 32 * sizeof(unsigned char));
-    cudaMalloc(&hashbuf, 64 * sizeof(unsigned char));
-    
-    kernel_add_scalar_copy_scalar<<<1,32>>>(n, scalar);
-    cudaDeviceSynchronize();
+    for (int i = 0; i < 32; ++i) {
+        n[i] = scalar[i];
+    }
 
     n[31] = scalar[31] & 127;
 
@@ -37,8 +34,9 @@ __device__ void ed25519_kernel_add_scalar(unsigned char *public_key, unsigned ch
         sha512_update(&hash, scalar, 32);
         sha512_final(&hash, hashbuf);
 
-        kernel_add_scalar_copy_pk<<<1,32>>>(private_key, hashbuf);
-        cudaDeviceSynchronize();
+        for (int i = 0; i < 32; ++i) {
+            private_key[32 + i] = hashbuf[i];
+        }
     }
 
     /* public key: A = nB + T */
@@ -68,9 +66,6 @@ __device__ void ed25519_kernel_add_scalar(unsigned char *public_key, unsigned ch
         ge_p3_tobytes(public_key, &A);
     }
 
-    cudaFree(n);
-    cudaFree(hashbuf);
-    cudaDeviceSynchronize();
 }
 
 __global__ void ed25519_kernel_add_scalar_batch(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar, int limit) {
@@ -79,7 +74,7 @@ __global__ void ed25519_kernel_add_scalar_batch(unsigned char *public_key, unsig
         return;
     }
 
-    ed25519_kernel_add_scalar(&public_key[compute_index * 32], &private_key[compute_index * 64], scalar);
+    ed25519_kernel_add_scalar(&public_key[compute_index * 32], (private_key == NULL)? NULL : &private_key[compute_index * 64], scalar);
 }
 
 __global__ void ed25519_kernel_add_multi_scalar_batch(unsigned char *public_key, unsigned char *private_key, const unsigned char *scalar, int *scalar_mapping, int limit) {
@@ -89,5 +84,5 @@ __global__ void ed25519_kernel_add_multi_scalar_batch(unsigned char *public_key,
     }
 
     int scalar_index = ((scalar_mapping == NULL)? compute_index: scalar_mapping[compute_index]);
-    ed25519_kernel_add_scalar(&public_key[compute_index * 32], &private_key[compute_index * 64], &scalar[scalar_index * 32]);
+    ed25519_kernel_add_scalar(&public_key[compute_index * 32], (private_key == NULL)? NULL : &private_key[compute_index * 64], &scalar[scalar_index * 32]);
 }
